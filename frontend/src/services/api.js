@@ -1,0 +1,31 @@
+// services/api.js — Central Axios instance
+// All API calls go through this file. To change the base URL, update .env only.
+
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  timeout: 30000,
+});
+
+// Attach JWT to every request automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('crddms_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// If token expired → redirect to login
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('crddms_token');
+      localStorage.removeItem('crddms_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
+
+export default api;
